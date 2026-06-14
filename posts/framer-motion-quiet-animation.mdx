@@ -1,0 +1,84 @@
+---
+title: "Framer Motion 的安静动效哲学"
+date: "2024-06-11"
+category: "开发笔记"
+excerpt: "如何用 Framer Motion 实现不打扰、不哗众取宠的动效——一种属于安静网站的动画语言。"
+tags: ["Framer Motion", "动画", "React"]
+---
+
+动效对于网站来说，就像音乐中的休止符。它的存在不是为了让页面更热闹，而是为了让节奏更舒适。
+
+## 安静的动效原则
+
+1. **慢** — 过渡时间通常在 0.6-1.2 秒之间，比常规动画更从容
+2. **柔** — 使用 `easeOut` 或自定义贝塞尔曲线，避免机械的线性运动
+3. **克** — 同一页面上的动画元素不超过 3-4 个，避免视觉疲劳
+4. **隐** — 动效是体验的加分项，不是核心内容。如果用户关闭动画，页面应该依然完整可用
+
+## 自定义缓动曲线
+
+```ts
+const gentleEasing = [0.25, 0.1, 0.25, 1];
+```
+
+这条贝塞尔曲线与 CSS 的 `ease` 类似，但更加柔和。它的特点是：
+
+- 开始缓慢，给眼睛准备时间
+- 中段自然加速
+- 结束缓慢减速，不会突然停止
+
+## 滚动触发动画
+
+使用 `useInView` 实现只在进入视口时触发的动画：
+
+```tsx
+import { motion, useInView } from "framer-motion";
+import { useRef } from "react";
+
+function FadeIn({ children }) {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-50px" });
+
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 24 }}
+      animate={isInView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+```
+
+关键参数：
+
+- `once: true` — 只触发一次，不会反复播放
+- `margin: "-50px"` — 提前 50px 触发动画，更自然
+
+## 交错动画
+
+列表项使用交错出现（stagger）而不是同时出现：
+
+```tsx
+const container = {
+  hidden: {},
+  visible: {
+    transition: { staggerChildren: 0.1 },
+  },
+};
+
+const item = {
+  hidden: { opacity: 0, y: 16 },
+  visible: { opacity: 1, y: 0 },
+};
+```
+
+每个元素间隔 0.1 秒，形成温和的波浪感。
+
+## 最好的动效
+
+> 最好的动效，是用户没有注意到它存在的动效。它让页面感觉更流畅、更精致，但不会抢夺内容的注意力。
+
+这正是安静动效的终极目标。

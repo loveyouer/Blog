@@ -1,0 +1,73 @@
+---
+title: "Next.js 14 App Router 静态导出实践"
+date: "2024-06-13"
+category: "开发笔记"
+excerpt: "记录使用 Next.js 14 App Router 进行静态导出（Static Export）的完整实践过程，包括路由配置、MDX 渲染和部署优化。"
+tags: ["Next.js", "React", "前端"]
+---
+
+Next.js 14 的 App Router 带来了许多新的可能性，同时也对静态导出提出了一些不同于 Pages Router 的要求。这篇文章记录了完整的配置和踩坑过程。
+
+## 为什么选择静态导出
+
+对于个人博客这种内容为主的站点，静态导出有几个明显优势：
+
+1. **部署简单** — 纯 HTML/CSS/JS，可以在任何静态托管平台部署
+2. **性能优秀** — 无需服务端渲染，首字节时间极短
+3. **SEO 友好** — 所有内容在构建时就已经确定
+
+## 基础配置
+
+在 `next.config.js` 中启用静态导出：
+
+```js
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  output: 'export',
+  images: {
+    unoptimized: true,
+  },
+  trailingSlash: true,
+};
+
+module.exports = nextConfig;
+```
+
+几个关键配置：
+
+- `output: 'export'` — 启用静态导出模式
+- `images.unoptimized: true` — 静态导出不支持图片优化服务
+- `trailingSlash: true` — 让 URL 以斜杠结尾，更利于静态托管
+
+## 动态路由的处理
+
+对于 `app/posts/[slug]/page.tsx` 这类动态路由，需要使用 `generateStaticParams` 来告诉 Next.js 构建时需要生成哪些页面：
+
+```tsx
+export function generateStaticParams() {
+  const slugs = getPostSlugs();
+  return slugs.map((slug) => ({ slug }));
+}
+```
+
+## MDX 渲染
+
+博客使用 `next-mdx-remote` 来渲染 Markdown 文章，配合 `gray-matter` 解析 frontmatter：
+
+```tsx
+import { serialize } from "next-mdx-remote/serialize";
+import { MDXRemote } from "next-mdx-remote";
+
+const mdxSource = await serialize(content);
+<MDXRemote {...mdxSource} />;
+```
+
+## 部署到 Vercel
+
+虽然静态导出可以在任何地方部署，但 Vercel 对 Next.js 有原生支持，部署体验最顺畅：
+
+1. 连接 GitHub 仓库
+2. 选择 Next.js 预设
+3. 一键部署
+
+如果需要纯静态导出，可以在构建设置中确认 `next build` 命令即可。
