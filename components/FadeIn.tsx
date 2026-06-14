@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useInView } from "framer-motion";
-import { useRef, ReactNode } from "react";
+import { useRef, ReactNode, useEffect, useState } from "react";
 
 interface FadeInProps {
   children: ReactNode;
@@ -20,8 +20,13 @@ export function FadeIn({
   direction = "up",
   distance = 24,
 }: FadeInProps) {
-  const ref = useRef(null);
+  const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, margin: "-50px" });
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const directions = {
     up: { y: distance },
@@ -31,18 +36,14 @@ export function FadeIn({
     none: {},
   };
 
+  // Only animate after hydration is complete to avoid mismatch
+  const shouldAnimate = mounted && isInView;
+
   return (
     <motion.div
       ref={ref}
-      initial={{
-        opacity: 0,
-        ...directions[direction],
-      }}
-      animate={isInView ? {
-        opacity: 1,
-        x: 0,
-        y: 0,
-      } : {}}
+      initial={{ opacity: 0, ...directions[direction] }}
+      animate={shouldAnimate ? { opacity: 1, x: 0, y: 0 } : { opacity: 0, ...directions[direction] }}
       transition={{
         delay,
         duration,

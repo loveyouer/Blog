@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import { getPostBySlug, getPostSlugs, renderPost } from "@/lib/posts";
-import { FadeIn } from "@/components/FadeIn";
 import { ArrowLeft, Clock, Calendar } from "lucide-react";
 import Link from "next/link";
 import { siteConfig } from "@/lib/config";
@@ -33,7 +32,7 @@ export default async function PostPage({ params }: PostPageProps) {
 
   return (
     <article className="max-w-2xl mx-auto">
-      <FadeIn>
+      <div className="animate-fade-in">
         <Link
           href="/categories/"
           className="inline-flex items-center gap-2 text-sm text-text-muted hover:text-soft-coral transition-colors duration-400 mb-12"
@@ -41,9 +40,9 @@ export default async function PostPage({ params }: PostPageProps) {
           <ArrowLeft size={16} />
           返回文章列表
         </Link>
-      </FadeIn>
+      </div>
 
-      <FadeIn delay={0.1}>
+      <div className="animate-slide-up">
         <header className="mb-12">
           <div className="flex items-center gap-4 mb-4 text-sm text-text-muted flex-wrap">
             <span className="text-soft-coral font-medium">{post.category}</span>
@@ -74,26 +73,24 @@ export default async function PostPage({ params }: PostPageProps) {
             </div>
           )}
         </header>
-      </FadeIn>
+      </div>
 
-      <FadeIn delay={0.2}>
+      <div className="animate-slide-up-delay">
         <div
           className="prose prose-lg max-w-none prose-headings:font-serif prose-headings:text-deep-blue prose-headings:font-normal prose-p:text-text-primary prose-p:leading-relaxed prose-a:text-soft-coral prose-a:no-underline hover:prose-a:underline prose-strong:text-deep-blue prose-li:text-text-secondary"
           dangerouslySetInnerHTML={{ __html: htmlContent }}
         />
-      </FadeIn>
+      </div>
 
-      <FadeIn delay={0.3}>
-        <div className="mt-16 pt-8 border-t border-border-light/50">
-          <p className="text-sm text-text-muted italic text-center">
-            感谢阅读。欢迎在{" "}
-            <a href={siteConfig.github} className="text-soft-coral">
-              GitHub
-            </a>{" "}
-            上与我交流。
-          </p>
-        </div>
-      </FadeIn>
+      <div className="mt-16 pt-8 border-t border-border-light/50 animate-slide-up-delay-2">
+        <p className="text-sm text-text-muted italic text-center">
+          感谢阅读。欢迎在{" "}
+          <a href={siteConfig.github} className="text-soft-coral">
+            GitHub
+          </a>{" "}
+          上与我交流。
+        </p>
+      </div>
     </article>
   );
 }
