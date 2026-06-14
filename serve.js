@@ -1,12 +1,10 @@
 const http = require('http');
 const fs = require('fs');
-const path = require('path');
 
-const PORT = 8888;
-// 使用绝对路径，确保在 Windows 和 Git Bash 中都能正确解析
-const ROOT = path.join('E:', 'Workspace', 'Project', 'CRTBlog', 'out');
+const PORT = 8889;
+const ROOT = 'E:\\Workspace\\Project\\CRTBlog\\out';
 
-const MIME_TYPES = {
+const MIME = {
   '.html': 'text/html',
   '.css': 'text/css',
   '.js': 'application/javascript',
@@ -19,73 +17,75 @@ const MIME_TYPES = {
   '.ico': 'image/x-icon',
   '.woff': 'font/woff',
   '.woff2': 'font/woff2',
-  '.ttf': 'font/ttf',
+  '.ttf': 'font/ttf'
 };
 
 const server = http.createServer((req, res) => {
-  const pathname = new URL(req.url, 'http://localhost').pathname;
-  let filePath = path.join(ROOT, pathname);
+  // 1. 解码 URL，去掉查询参数
+  let url = decodeURIComponent(req.url).split('?')[0];
 
-  // 如果请求根目录，返回 index.html
-  if (pathname === '/') {
-    filePath = path.join(ROOT, 'index.html');
+  // 2. 去掉开头的 /
+  let rel = url.startsWith('/') ? url.slice(1) : url;
+
+  // 3. 空路径 = 首页
+  if (!rel) rel = 'index.html';
+
+  // 4. 将 URL 的 / 替换成 Windows 的 \
+  const localPath = ROOT + '\\' + rel.replace(/\//g, '\\');
+
+  // 5. 检查文件或目录
+  let filePath = null;
+
+  if (fs.existsSync(localPath)) {
+    const stat = fs.statSync(localPath);
+    if (stat.isFile()) {
+      filePath = localPath;
+    } else if (stat.isDirectory()) {
+      const indexPath = localPath + '\\index.html';
+      if (fs.existsSync(indexPath)) {
+        filePath = indexPath;
+      }
+    }
   }
-  // 如果路径以 / 结尾，是目录，尝试返回 index.html
-  else if (pathname.endsWith('/')) {
-    filePath = path.join(filePath, 'index.html');
+
+  // 6. 尝试加 .html
+  if (!filePath) {
+    const htmlPath = localPath + '.html';
+    if (fs.existsSync(htmlPath)) {
+      filePath = htmlPath;
+    }
   }
 
-  console.log('Request:', pathname, '→ Resolved:', filePath);
+  // 7. 如果是目录（不带尾斜杠），尝试 index.html
+  if (!filePath) {
+    const indexPath = localPath + '\\index.html';
+    if (fs.existsSync(indexPath)) {
+      filePath = indexPath;
+    }
+  }
 
-  fs.stat(filePath, (err, stats) => {
+  console.log(req.url, '→', filePath || '404');
+
+  if (!filePath) {
+    res.writeHead(404, { 'Content-Type': 'text/html' });
+    res.end('<h1>404 Not Found</h1><p>' + req.url + '</p>');
+    return;
+  }
+
+  const ext = filePath.slice(filePath.lastIndexOf('.')).toLowerCase();
+  fs.readFile(filePath, (err, data) => {
     if (err) {
-      // 尝试加 .html 后缀
-      const htmlPath = filePath + '.html';
-      fs.stat(htmlPath, (err2, stats2) => {
-        if (!err2 && stats2.isFile()) {
-          serveFile(htmlPath, res);
-        } else {
-          res.writeHead(404, { 'Content-Type': 'text/html' });
-          res.end('<h1>404 Not Found</h1><p>Path: ' + pathname + '</p>');
-        }
-      });
+      res.writeHead(500);
+      res.end('500');
       return;
     }
-
-    if (stats.isDirectory()) {
-      const indexPath = path.join(filePath, 'index.html');
-      fs.stat(indexPath, (err2) => {
-        if (!err2) {
-          serveFile(indexPath, res);
-        } else {
-          res.writeHead(404, { 'Content-Type': 'text/html' });
-          res.end('<h1>404 Not Found</h1>');
-        }
-      });
-      return;
-    }
-
-    serveFile(filePath, res);
+    res.writeHead(200, {
+      'Content-Type': MIME[ext] || 'application/octet-stream'
+    });
+    res.end(data);
   });
 });
 
-function serveFile(filePath, res) {
-  const ext = path.extname(filePath).toLowerCase();
-  const contentType = MIME_TYPES[ext] || 'application/octet-stream';
-
-  fs.readFile(filePath, (err, data) => {
-    if (err) {
-      res.writeHead(500, { 'Content-Type': 'text/html' });
-      res.end('<h1>500 Internal Server Error</h1>');
-      return;
-    }
-    res.writeHead(200, { 'Content-Type': contentType });
-    res.end(data);
-  });
-}
-
 server.listen(PORT, () => {
-  console.log('Server running at http://localhost:' + PORT + '/');
-  console.log('Serving from: ' + ROOT);
-  console.log('Index exists: ' + fs.existsSync(path.join(ROOT, 'index.html')));
+  console.log('✓ Server at http://localhost:' + PORT + '/');
 });

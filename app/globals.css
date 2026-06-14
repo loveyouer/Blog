@@ -53,6 +53,11 @@
     line-height: 1.7;
   }
 
+  pre code {
+    color: #e2e8f0 !important;
+    background: transparent !important;
+  }
+
   code {
     font-family: "SF Mono", "Fira Code", "Fira Mono", monospace;
   }
@@ -63,6 +68,14 @@
     padding: 0.15rem 0.4rem;
     border-radius: 0.25rem;
     font-size: 0.85em;
+  }
+
+  /* Inline code readability fix */
+  .prose code {
+    color: #D4765E;
+  }
+  .prose pre code {
+    color: #e2e8f0 !important;
   }
 
   blockquote {
